@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
         Typeface typeface = Typeface.createFromAsset(getAssets(), "Shabnam-Light-FD.ttf");
 
         PersianCalendar initDate = new PersianCalendar();
-        initDate.setPersianDate(1370, 3, 13);
+        initDate.setPersianDate(1370, 7, 22);
 
         picker = new PersianDatePickerDialog(this)
                 .setPositiveButtonString("باشه")
