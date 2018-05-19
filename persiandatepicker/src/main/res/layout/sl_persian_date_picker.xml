@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -9,29 +10,51 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <ir.hamsaa.persiandatepicker.view.PersianNumberPicker
-            android:id="@+id/yearNumberPicker"
+        <cn.carbswang.android.numberpickerview.library.NumberPickerView
+            android:id="@+id/yearPicker"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="160dp"
             android:layout_marginLeft="4dp"
-            android:layout_marginRight="2dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            app:npv_DividerColor="#858585"
+            app:npv_DividerHeight="2dp"
+            app:npv_ItemPaddingHorizontal="16dp"
+            app:npv_RespondChangeOnDetached="false"
+            app:npv_TextColorNormal="#a9a9a9"
+            app:npv_TextColorSelected="#000"
+            app:npv_TextSizeNormal="12sp"
+            app:npv_TextSizeSelected="18sp" />
 
-        <ir.hamsaa.persiandatepicker.view.PersianNumberPicker
-            android:id="@+id/monthNumberPicker"
+        <cn.carbswang.android.numberpickerview.library.NumberPickerView
+            android:id="@+id/monthPicker"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="2dp"
-            android:layout_marginRight="2dp"
-            android:layout_weight="1" />
+            android:layout_height="160dp"
+            android:layout_marginLeft="4dp"
+            android:layout_weight="1"
+            app:npv_DividerColor="#858585"
+            app:npv_DividerHeight="2dp"
+            app:npv_ItemPaddingHorizontal="16dp"
+            app:npv_RespondChangeOnDetached="false"
+            app:npv_TextColorNormal="#a9a9a9"
+            app:npv_TextColorSelected="#000"
+            app:npv_TextSizeNormal="12sp"
+            app:npv_TextSizeSelected="18sp" />
 
-        <ir.hamsaa.persiandatepicker.view.PersianNumberPicker
-            android:id="@+id/dayNumberPicker"
+        <cn.carbswang.android.numberpickerview.library.NumberPickerView
+            android:id="@+id/dayPicker"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="2dp"
+            android:layout_height="160dp"
+            android:layout_marginLeft="4dp"
+            android:layout_weight="1"
+            app:npv_DividerColor="#858585"
+            app:npv_DividerHeight="2dp"
+            app:npv_ItemPaddingHorizontal="16dp"
+            app:npv_RespondChangeOnDetached="false"
             android:layout_marginRight="4dp"
-            android:layout_weight="1" />
+            app:npv_TextColorNormal="#a9a9a9"
+            app:npv_TextColorSelected="#000"
+            app:npv_TextSizeNormal="12sp"
+            app:npv_TextSizeSelected="18sp" />
     </LinearLayout>
 
     <TextView

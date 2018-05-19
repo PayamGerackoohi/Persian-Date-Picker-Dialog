@@ -9,6 +9,7 @@ import android.support.annotation.StringRes;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.AppCompatButton;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -22,6 +23,7 @@ import ir.hamsaa.persiandatepicker.util.PersianHelper;
  */
 
 public class PersianDatePickerDialog {
+    private static final String TAG = "PersianDatePickerDialog";
 
     public static final int THIS_YEAR = -1;
 
@@ -114,7 +116,6 @@ public class PersianDatePickerDialog {
         return this;
     }
 
-
     public void show() {
 
         pCalendar = new PersianCalendar();
@@ -125,7 +126,6 @@ public class PersianDatePickerDialog {
         final AppCompatButton positiveButton = v.findViewById(R.id.positive_button);
         final AppCompatButton negativeButton = v.findViewById(R.id.negative_button);
         final AppCompatButton todayButton = v.findViewById(R.id.today_button);
-
 
         if (maxYear > 0) {
             datePicker.setMaxYear(maxYear);
@@ -161,7 +161,11 @@ public class PersianDatePickerDialog {
             todayButton.setVisibility(View.VISIBLE);
         }
 
-        pCalendar = datePicker.getDisplayPersianDate();
+        Log.e(TAG, "testtest: show: init time");
+        if (initDate != null) {
+            pCalendar = initDate;
+//        pCalendar = datePicker.getDisplayPersianDate();
+        }
         updateView(dateText);
 
         datePicker.setOnDateChangedListener(new PersianDatePicker.OnDateChangedListener() {
@@ -172,10 +176,7 @@ public class PersianDatePickerDialog {
             }
         });
 
-        final AlertDialog dialog = new AlertDialog.Builder(context)
-                .setView(v)
-                .setCancelable(true)
-                .create();
+        final AlertDialog dialog = new AlertDialog.Builder(context).setView(v).setCancelable(true).create();
 
         negativeButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -220,12 +221,7 @@ public class PersianDatePickerDialog {
     }
 
     private void updateView(TextView dateText) {
-        String date =
-                pCalendar.getPersianWeekDayName() + " " +
-                        pCalendar.getPersianDay() + " " +
-                        pCalendar.getPersianMonthName() + " " +
-                        pCalendar.getPersianYear();
+        String date = pCalendar.getPersianWeekDayName() + " " + pCalendar.getPersianDay() + " " + pCalendar.getPersianMonthName() + " " + pCalendar.getPersianYear();
         dateText.setText(PersianHelper.toPersianNumber(date));
     }
-
 }

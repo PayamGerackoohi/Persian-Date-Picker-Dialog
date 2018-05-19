@@ -8,7 +8,9 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.ColorInt;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -17,24 +19,24 @@ import android.widget.TextView;
 
 import java.util.Date;
 
+import cn.carbswang.android.numberpickerview.library.NumberPickerView;
 import ir.hamsaa.persiandatepicker.util.PersianCalendar;
 import ir.hamsaa.persiandatepicker.util.PersianCalendarConstants;
 import ir.hamsaa.persiandatepicker.util.PersianCalendarUtils;
 import ir.hamsaa.persiandatepicker.util.PersianHelper;
-import ir.hamsaa.persiandatepicker.view.PersianNumberPicker;
-
 
 class PersianDatePicker extends LinearLayout {
+    private static final String TAG = "PersianDatePicker";
 
     private final PersianCalendar pCalendar;
-    private int selectedMonth;
-    private int selectedYear;
-    private int selectedDay;
+    private int selectedMonth = 7;
+    private int selectedYear = 1370;
+    private int selectedDay = 22;
     private boolean displayMonthNames;
     private OnDateChangedListener mListener;
-    private PersianNumberPicker yearNumberPicker;
-    private PersianNumberPicker monthNumberPicker;
-    private PersianNumberPicker dayNumberPicker;
+    private NumberPickerView yearPicker;
+    private NumberPickerView monthPicker;
+    private NumberPickerView dayPicker;
 
     private int minYear;
     private int maxYear;
@@ -44,6 +46,9 @@ class PersianDatePicker extends LinearLayout {
     private Typeface typeFace;
     private int dividerColor;
     private int yearRange;
+    private String[] yearValues;
+    private String[] monthValues;
+    private String[] dayValues;
 
     public PersianDatePicker(Context context) {
         this(context, null, -1);
@@ -59,15 +64,15 @@ class PersianDatePicker extends LinearLayout {
         yearRange = a.getInteger(R.styleable.PersianDatePicker_yearRange, 10);
         /*
          * Initializing yearNumberPicker min and max values If minYear and
-		 * maxYear attributes are not set, use (current year - 10) as min and
-		 * (current year + 10) as max.
-		 */
+         * maxYear attributes are not set, use (current year - 10) as min and
+         * (current year + 10) as max.
+         */
         minYear = a.getInt(R.styleable.PersianDatePicker_minYear, pCalendar.getPersianYear() - yearRange);
         maxYear = a.getInt(R.styleable.PersianDatePicker_maxYear, pCalendar.getPersianYear() + yearRange);
         displayMonthNames = a.getBoolean(R.styleable.PersianDatePicker_displayMonthNames, false);
         /*
          * displayDescription
-		 */
+         */
         displayDescription = a.getBoolean(R.styleable.PersianDatePicker_displayDescription, false);
         selectedDay = a.getInteger(R.styleable.PersianDatePicker_selectedDay, pCalendar.getPersianDay());
         selectedYear = a.getInt(R.styleable.PersianDatePicker_selectedYear, pCalendar.getPersianYear());
@@ -81,7 +86,6 @@ class PersianDatePicker extends LinearLayout {
         if (maxYear < selectedYear) {
             maxYear = selectedYear + yearRange;
         }
-
         a.recycle();
     }
 
@@ -95,32 +99,10 @@ class PersianDatePicker extends LinearLayout {
         View view = inflater.inflate(R.layout.sl_persian_date_picker, this);
 
         // get views
-        yearNumberPicker = view.findViewById(R.id.yearNumberPicker);
-        monthNumberPicker = view.findViewById(R.id.monthNumberPicker);
-        dayNumberPicker = view.findViewById(R.id.dayNumberPicker);
+        yearPicker = view.findViewById(R.id.yearPicker);
+        monthPicker = view.findViewById(R.id.monthPicker);
+        dayPicker = view.findViewById(R.id.dayPicker);
         descriptionTextView = view.findViewById(R.id.descriptionTextView);
-
-
-        yearNumberPicker.setFormatter(new NumberPicker.Formatter() {
-            @Override
-            public String format(int i) {
-                return PersianHelper.toPersianNumber(i + "");
-            }
-        });
-
-        monthNumberPicker.setFormatter(new NumberPicker.Formatter() {
-            @Override
-            public String format(int i) {
-                return PersianHelper.toPersianNumber(i + "");
-            }
-        });
-
-        dayNumberPicker.setFormatter(new NumberPicker.Formatter() {
-            @Override
-            public String format(int i) {
-                return PersianHelper.toPersianNumber(i + "");
-            }
-        });
 
         // init calendar
         pCalendar = new PersianCalendar();
@@ -128,11 +110,13 @@ class PersianDatePicker extends LinearLayout {
         // update variables from xml
         updateVariablesFromXml(context, attrs);
 
+        Log.e(TAG, "PersianDatePicker: is called.");
         // update view
         updateViewData();
     }
 
     public void setMaxYear(int maxYear) {
+        Log.e(TAG, "setMaxYear: is called");
         this.maxYear = maxYear;
         updateViewData();
     }
@@ -173,56 +157,32 @@ class PersianDatePicker extends LinearLayout {
         }
     }
 
-
     private void updateViewData() {
-
+        Log.e(TAG, "testtest: updateViewData: is called.");
         if (typeFace != null) {
-            yearNumberPicker.setTypeFace(typeFace);
-            monthNumberPicker.setTypeFace(typeFace);
-            dayNumberPicker.setTypeFace(typeFace);
+            yearPicker.setContentTextTypeface(typeFace);
+            monthPicker.setContentTextTypeface(typeFace);
+            dayPicker.setContentTextTypeface(typeFace);
         }
 
         if (dividerColor > 0) {
-            setDividerColor(yearNumberPicker, dividerColor);
-            setDividerColor(monthNumberPicker, dividerColor);
-            setDividerColor(dayNumberPicker, dividerColor);
+            yearPicker.setDividerColor(dividerColor);
+            monthPicker.setDividerColor(dividerColor);
+            dayPicker.setDividerColor(dividerColor);
         }
 
-        yearNumberPicker.setMinValue(minYear);
-        yearNumberPicker.setMaxValue(maxYear);
+        setupYearPicker(minYear, maxYear);
+        setupMonthPicker();
+        setupDayPicker(31);
 
-
-        if (selectedYear > maxYear) {
-            selectedYear = maxYear;
+        if (displayDescription) {
+            descriptionTextView.setVisibility(View.VISIBLE);
+//            descriptionTextView.setText(getDisplayPersianDate().getPersianLongDate());
         }
-        if (selectedYear < minYear) {
-            selectedYear = minYear;
-        }
+        updateTexts();
+    }
 
-        yearNumberPicker.setValue(selectedYear);
-        yearNumberPicker.setOnValueChangedListener(dateChangeListener);
-
-		/*
-         * initialing monthNumberPicker
-		 */
-
-        monthNumberPicker.setMinValue(1);
-        monthNumberPicker.setMaxValue(12);
-        if (displayMonthNames) {
-            monthNumberPicker.setDisplayedValues(PersianCalendarConstants.persianMonthNames);
-        }
-
-        if (selectedMonth < 1 || selectedMonth > 12) {
-            throw new IllegalArgumentException(String.format("Selected month (%d) must be between 1 and 12", selectedMonth));
-        }
-        monthNumberPicker.setValue(selectedMonth);
-        monthNumberPicker.setOnValueChangedListener(dateChangeListener);
-
-		/*
-         * initializing dayNumberPicker
-		 */
-        dayNumberPicker.setMinValue(1);
-        dayNumberPicker.setMaxValue(31);
+    private void calculateSelectedDay() {
         if (selectedDay > 31 || selectedDay < 1) {
             throw new IllegalArgumentException(String.format("Selected day (%d) must be between 1 and 31", selectedDay));
         }
@@ -236,64 +196,129 @@ class PersianDatePicker extends LinearLayout {
                 selectedDay = 29;
             }
         }
-        dayNumberPicker.setValue(selectedDay);
-        dayNumberPicker.setOnValueChangedListener(dateChangeListener);
-
-
-        if (displayDescription) {
-            descriptionTextView.setVisibility(View.VISIBLE);
-            descriptionTextView.setText(getDisplayPersianDate().getPersianLongDate());
-        }
     }
 
-    NumberPicker.OnValueChangeListener dateChangeListener = new NumberPicker.OnValueChangeListener() {
+    private void setupDayPicker(int max) {
+        calculateSelectedDay();
+        dayValues = generateLinearArray(1, max);
+        setupNumberPickerView(dayPicker, 1, max, dayValues);
+        dayPicker.setValue(selectedDay);
+        dayPicker.setOnValueChangeListenerInScrolling(new NumberPickerView.OnValueChangeListenerInScrolling() {
+            @Override
+            public void onValueChangeInScrolling(NumberPickerView picker, int oldVal, int newVal) {
+                updateDate(null, null, newVal);
+            }
+        });
+    }
 
-        @Override
-        public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-            int year = yearNumberPicker.getValue();
+    private void setupMonthPicker() {
+        monthValues = PersianCalendarConstants.persianMonthNames;
+        setupNumberPickerView(monthPicker, 1, 12, monthValues);
+        if (selectedMonth < 1 || selectedMonth > 12) {
+            throw new IllegalArgumentException(String.format("Selected month (%d) must be between 1 and 12", selectedMonth));
+        }
+        monthPicker.setValue(selectedMonth);
+        monthPicker.setOnValueChangeListenerInScrolling(new NumberPickerView.OnValueChangeListenerInScrolling() {
+            @Override
+            public void onValueChangeInScrolling(NumberPickerView picker, int oldVal, int newVal) {
+                updateDate(null, newVal, null);
+            }
+        });
+    }
+
+    private String[] generateLinearArray(int from, int to) {
+        String[] values;
+        int c = 0;
+        if (from > to) {
+            values = new String[from - to + 1];
+            for (int i = from; i >= to; i--) {
+                values[c++] = PersianHelper.toPersianNumber(i);
+            }
+        } else {
+            values = new String[to - from + 1];
+            for (int i = from; i <= to; i++) {
+                values[c++] = PersianHelper.toPersianNumber(i);
+            }
+        }
+        return values;
+    }
+
+    private void setupYearPicker(int min, int max) {
+        yearValues = generateLinearArray(min, max);
+        setupNumberPickerView(yearPicker, min, max, yearValues);
+
+        calculateSelectedYear();
+        yearPicker.setOnValueChangeListenerInScrolling(new NumberPickerView.OnValueChangeListenerInScrolling() {
+            @Override
+            public void onValueChangeInScrolling(NumberPickerView picker, int oldVal, int newVal) {
+                updateDate(newVal, null, null);
+            }
+        });
+    }
+
+    private void calculateSelectedYear() {
+        if (selectedYear > maxYear) {
+            selectedYear = maxYear;
+        }
+        if (selectedYear < minYear) {
+            selectedYear = minYear;
+        }
+        yearPicker.setValue(selectedYear);
+    }
+
+    private void setupNumberPickerView(NumberPickerView numberPicker, int min, int max, String[] values) {
+        Log.e(TAG, "setupNumberPickerView: min<" + min + "> max<" + max + ">");
+        numberPicker.setWrapSelectorWheel(false);
+        numberPicker.setMinValue(min);
+        boolean increasing = values.length >= numberPicker.getDisplayedValues().length;
+        if (increasing) {
+            numberPicker.setDisplayedValues(values);
+            numberPicker.setMaxValue(max);
+        } else {
+            numberPicker.setMaxValue(max);
+            numberPicker.setDisplayedValues(values);
+        }
+        numberPicker.setValue((min + max) / 2);
+    }
+
+    private void updateDate(Integer yearIndex, Integer monthIndex, Integer dayIndex) {
+        if (dayIndex == null) {
+            int year = yearPicker.getValue();
+            int month = monthPicker.getValue();
+
+            if (yearIndex != null) {
+                year = Integer.parseInt(yearValues[yearIndex]);
+            }
+            if (monthIndex != null) {
+                month = monthIndex;
+            }
             boolean isLeapYear = PersianCalendarUtils.isPersianLeapYear(year);
 
-            int month = monthNumberPicker.getValue();
-            int day = dayNumberPicker.getValue();
-
             if (month < 7) {
-                dayNumberPicker.setMinValue(1);
-                dayNumberPicker.setMaxValue(31);
-            } else if (month > 6 && month < 12) {
-                if (day == 31) {
-                    dayNumberPicker.setValue(30);
-                }
-                dayNumberPicker.setMinValue(1);
-                dayNumberPicker.setMaxValue(30);
+                setupDayPicker(31);
+            } else if (month < 12) {
+                setupDayPicker(30);
             } else if (month == 12) {
                 if (isLeapYear) {
-                    if (day == 31) {
-                        dayNumberPicker.setValue(30);
-                    }
-                    dayNumberPicker.setMinValue(1);
-                    dayNumberPicker.setMaxValue(30);
+                    setupDayPicker(30);
                 } else {
-                    if (day > 29) {
-                        dayNumberPicker.setValue(29);
-                    }
-                    dayNumberPicker.setMinValue(1);
-                    dayNumberPicker.setMaxValue(29);
+                    setupDayPicker(29);
                 }
             }
+        }
+        updateTexts();
+    }
 
-            // Set description
-            if (displayDescription) {
-                descriptionTextView.setText(getDisplayPersianDate().getPersianLongDate());
-            }
-
-            if (mListener != null) {
-                mListener.onDateChanged(yearNumberPicker.getValue(), monthNumberPicker.getValue(),
-                        dayNumberPicker.getValue());
-            }
-
+    private void updateTexts() {
+        Log.e(TAG, "testtest: updateTexts: year<" + yearPicker.getValue() + "> month<" + monthPicker.getValue() + "> day<" + dayPicker.getValue() + ">");
+        if (displayDescription) {
+            descriptionTextView.setText(getDisplayPersianDate().getPersianLongDate());
         }
 
-    };
+        if (mListener != null) {
+            mListener.onDateChanged(yearPicker.getValue(), monthPicker.getValue(), dayPicker.getValue());
+        }
+    }
 
     public void setOnDateChangedListener(OnDateChangedListener onDateChangedListener) {
         mListener = onDateChangedListener;
@@ -319,9 +344,15 @@ class PersianDatePicker extends LinearLayout {
     }
 
     public Date getDisplayDate() {
+        return getPersianCalendar().getTime();
+    }
+
+    @NonNull
+    private PersianCalendar getPersianCalendar() {
         PersianCalendar displayPersianDate = new PersianCalendar();
-        displayPersianDate.setPersianDate(yearNumberPicker.getValue(), monthNumberPicker.getValue(), dayNumberPicker.getValue());
-        return displayPersianDate.getTime();
+        Log.e(TAG, "testtest: getPersianCalendar: year<" + yearPicker.getValue() + "> month<" + monthPicker.getValue() + "> day<" + dayPicker.getValue() + ">");
+        displayPersianDate.setPersianDate(yearPicker.getValue(), monthPicker.getValue(), dayPicker.getValue());
+        return displayPersianDate;
     }
 
     public void setDisplayDate(Date displayDate) {
@@ -329,12 +360,11 @@ class PersianDatePicker extends LinearLayout {
     }
 
     public PersianCalendar getDisplayPersianDate() {
-        PersianCalendar displayPersianDate = new PersianCalendar();
-        displayPersianDate.setPersianDate(yearNumberPicker.getValue(), monthNumberPicker.getValue(), dayNumberPicker.getValue());
-        return displayPersianDate;
+        return getPersianCalendar();
     }
 
     public void setDisplayPersianDate(PersianCalendar displayPersianDate) {
+        Log.e(TAG, "testtest: setDisplayPersianDate: year<" + displayPersianDate.getPersianYear() + ">");
         int year = displayPersianDate.getPersianYear();
         int month = displayPersianDate.getPersianMonth();
         int day = displayPersianDate.getPersianDay();
@@ -349,7 +379,6 @@ class PersianDatePicker extends LinearLayout {
             }
         }
 
-
         selectedYear = year;
         selectedMonth = month;
         selectedDay = day;
@@ -357,18 +386,17 @@ class PersianDatePicker extends LinearLayout {
         // if you pass selected year before min year, then we need to push min year to before that
         if (minYear > selectedYear) {
             minYear = selectedYear - yearRange;
-            yearNumberPicker.setMinValue(minYear);
         }
 
         // if you pass selected year after max year, then we need to push max year to after that
         if (maxYear < selectedYear) {
             maxYear = selectedYear + yearRange;
-            yearNumberPicker.setMaxValue(maxYear);
         }
 
-        yearNumberPicker.setValue(year);
-        monthNumberPicker.setValue(month);
-        dayNumberPicker.setValue(day);
+        setupYearPicker(minYear, maxYear);
+        yearPicker.setValue(year);
+        monthPicker.setValue(month);
+        dayPicker.setValue(day);
     }
 
     @Override
